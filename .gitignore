@@ -1,0 +1,120 @@
+# ============================================
+# ENVIRONMENT & SECRETS (MOST IMPORTANT ⚠️)
+# ============================================
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+*.env
+frontend/.env.local
+backend/.env
+
+# ============================================
+# PYTHON / FASTAPI (Backend)
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
+# Python egg / dist
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+
+# ============================================
+# NODE / NEXT.JS (Frontend)
+# ============================================
+node_modules/
+frontend/node_modules/
+
+# Next.js build output
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Build files
+build/
+frontend/build/
+
+# Next.js cache
+.next/cache/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Package lock (choose one - npm or yarn)
+# package-lock.json   # uncomment if using yarn
+# yarn.lock           # uncomment if using npm
+
+# ============================================
+# OS FILES
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ============================================
+# IDE / EDITOR
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# ============================================
+# LOGS
+# ============================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+
+# ============================================
+# MISC
+# ============================================
+*.zip
+*.tar.gz
+*.rar
+Procfile.txt       # agar sensitive ho, warna rakh sakta hai
+pyvenv.cfg
