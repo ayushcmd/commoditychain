@@ -8,13 +8,6 @@
 
 ---
 
-## Preview
-
-![CommodityChain Dashboard](./docs/dashboard.png)
-
-*Live dashboard — 8 commodities, real-time prices via Twelve Data, sidebar navigation, Top Movers panel, Market Sentiment gauge*
-
----
 
 ## Features
 
