@@ -17,7 +17,7 @@ export default function WatchlistPage() {
     return { ...item, com, pnl, pnlPct };
   }).filter(Boolean) as NonNullable<ReturnType<typeof items.map>[number]>[];
 
-  const totalPnl = entries.reduce((acc, e) => acc + (e as any).pnl, 0);
+  const totalPnl = entries.reduce((acc: number, e) => acc + (e as any).pnl, 0);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-base)" }}>

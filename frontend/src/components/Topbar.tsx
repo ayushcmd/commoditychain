@@ -1,14 +1,22 @@
 "use client";
 
 interface TopbarProps {
+  title: string;
+  subtitle: string;
   isConnected: boolean;
   lastUpdated: Date | null;
   actions?: React.ReactNode;
 }
 
-export function Topbar({ isConnected, lastUpdated, actions }: TopbarProps) {
+export function Topbar({ title, subtitle, isConnected, lastUpdated, actions }: TopbarProps) {
   return (
     <div className="app-topbar">
+      {/* Title & Subtitle */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-1)" }}>{title}</span>
+        <span style={{ fontSize: "11px", color: "var(--text-3)" }}>{subtitle}</span>
+      </div>
+
       {/* Search */}
       <div style={{ flex: 1, maxWidth: "320px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "var(--bg-input)", border: "0.5px solid var(--border)", borderRadius: "9px", padding: "7px 12px" }}>
