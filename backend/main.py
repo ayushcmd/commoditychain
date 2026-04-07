@@ -27,7 +27,7 @@ logger = logging.getLogger("main")
 
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:3001,https://commoditychain.vercel.app",
+    "*",
 ).split(",")
 
 
@@ -53,8 +53,8 @@ app = FastAPI(title="CommodityChain API", version="4.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
