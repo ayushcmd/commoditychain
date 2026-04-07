@@ -47,11 +47,8 @@ export function Sidebar() {
     <aside className="app-sidebar">
       {/* Logo */}
       <div style={{ padding: "0 16px", height: "56px", display: "flex", alignItems: "center", gap: "10px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        <div style={{ width: "32px", height: "32px", background: "var(--orange-mid)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
-            <path d="M2 10L5 6L8 8L12 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="12" cy="3" r="1.5" fill="#fff" />
-          </svg>
+        <div style={{ width: "32px", height: "32px", borderRadius: "9px", overflow: "hidden", flexShrink: 0 }}>
+          <img src="/android-chrome-192x192.png" width={32} height={32} alt="logo" style={{ borderRadius: "9px" }} />
         </div>
         <div>
           <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Commodity</div>
