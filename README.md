@@ -1,135 +1,150 @@
 # CommodityChain
 
-Real-time commodity intelligence platform — crude oil, gold, silver, natural gas, copper and more.
+> Real-time commodity intelligence platform — live prices, AI analysis, India macro layer, news feed, alerts, and interactive tools.
 
-## Stack
+![Dashboard Preview](./docs/dashboard.png)
 
-| Layer | Technology | Host |
-|---|---|---|
-| Frontend | Next.js 14 + TypeScript, TailwindCSS | Vercel (free) |
-| Backend | FastAPI + WebSockets | Fly.io (free) |
-| Data | yfinance (Yahoo Finance), FRED API | Free, no key |
-| AI (Phase 3) | Groq Llama 3.3 70B | Free tier |
+**Frontend:** [commoditychain.vercel.app](https://commoditychain.vercel.app) &nbsp;·&nbsp; **Backend API:** [commoditychain.onrender.com/docs](https://commoditychain.onrender.com/docs)
 
-## Phase 1 Features
+---
 
-- Live price cards — price, 24h change, high/low, prev close
-- Sparkline mini-charts with 30-day history
-- Infinite scroll ticker strip
-- Category filter: All / Energy / Metals / Agriculture
-- Market stats bar: gainers, losers, top mover
-- Volatility badge: Low / Medium / High / Extreme
-- Dark / light mode toggle (persisted)
-- WebSocket live updates with polling fallback
-- Auto-reconnect on WS disconnect
+## Preview
+
+![CommodityChain Dashboard](./docs/dashboard.png)
+
+*Live dashboard — 8 commodities, real-time prices via Twelve Data, sidebar navigation, Top Movers panel, Market Sentiment gauge*
+
+---
+
+## Features
+
+| Module | Description |
+|---|---|
+| Dashboard | Live price cards, bar charts, top movers, market sentiment |
+| Explorer | Full price history chart (1W/1M/3M/1Y), OHLC table, watchlist |
+| Global Map | D3 world map — producer/consumer profiles for 20 countries |
+| Correlation | 8×8 Pearson correlation heatmap (30-day rolling) |
+| Converter | Currency + commodity unit + value converter with live FX rates |
+| Watchlist | Hypothetical portfolio with live unrealised PnL |
+| Alerts | Browser push notification price alerts (localStorage) |
+| Export | CSV / JSON price history download |
+| News | Commodity-filtered news feed with AI sentiment labels |
+| Learn | Explainer articles — oil, gold, futures, copper, India context |
+| AI Analyst | Groq Llama 3.3 70B chat with live price context + 3 persona modes |
+| Shock Simulator | India macro impact model — drag crude price, see petrol/inflation/INR |
+| India Layer | City-wise petrol/diesel prices + tax breakdown + macro indicators |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14 + TypeScript |
+| Styling | Custom CSS variable design system (dark + light) |
+| Backend | FastAPI + WebSockets |
+| AI | Groq Llama 3.3 70B (free tier) |
+| Price data | Twelve Data API (real-time) |
+| Metals fallback | metals.live |
+| FX rates | open.er-api.com |
+| News | NewsAPI + curated fallback |
+| Frontend host | Vercel |
+| Backend host | Render |
+
+---
 
 ## Local Setup
 
-### Backend
-
-```powershell
+```bash
+# Terminal 1 — Backend
 cd backend
 py -3.12 -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-```
 
-Backend runs at http://localhost:8000
-API docs at http://localhost:8000/docs
-
-### Frontend
-
-```powershell
+# Terminal 2 — Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend runs at http://localhost:3000
+Open `http://localhost:3000` · API docs at `http://localhost:8000/docs`
 
-### Environment files
+---
 
-`backend/.env` — already created, no changes needed for local dev.
+## Environment Variables
 
-`frontend/.env.local` — already created, no changes needed for local dev.
+**backend/.env**
+```
+ALLOWED_ORIGINS=http://localhost:3000
+GROQ_API_KEY=           # console.groq.com — free
+TWELVE_DATA_KEY=        # twelvedata.com — free tier
+NEWS_API_KEY=           # newsapi.org — optional
+```
+
+**frontend/.env.local**
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
+
+---
+
+## API Reference
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/prices` | All commodity prices |
+| GET | `/api/prices/:id` | Single commodity |
+| GET | `/api/news` | News feed |
+| GET | `/api/rates` | Live FX rates |
+| POST | `/api/analyst` | AI analysis (Groq) |
+| POST | `/api/simulate` | India macro shock model |
+| GET | `/api/export/:id` | CSV/JSON download |
+| GET | `/api/india/prices` | City-wise petrol/diesel |
+| GET | `/api/correlation` | Pearson matrix |
+| WS | `/ws/prices` | Live price stream |
+
+---
 
 ## Project Structure
 
 ```
 commoditychain/
   backend/
-    main.py                         # FastAPI app, CORS, startup
+    main.py                    # FastAPI app, 9 routers
     requirements.txt
-    .env
-    models/
-      commodity.py                  # Pydantic models
-    routers/
-      prices.py                     # GET /api/prices, /api/prices/:id, /api/ticker
-      websocket.py                  # WS /ws/prices, broadcast loop
     services/
-      commodity_service.py          # yfinance fetch, cache (TTL 55s)
-  frontend/
-    src/
-      app/
-        layout.tsx                  # Root layout, metadata
-        page.tsx                    # Dashboard page
-        globals.css                 # Design tokens, CSS variables, animations
-      components/
-        Navbar.tsx                  # Sticky nav, live indicator, theme toggle
-        Ticker.tsx                  # Infinite scroll ticker
-        PriceCard.tsx               # Commodity price card
-        StatsBar.tsx                # Gainers / losers / top movers
-        charts/
-          Sparkline.tsx             # SVG sparkline with fill
-      hooks/
-        usePrices.ts                # WS + polling, auto-reconnect
-        useTheme.ts                 # Dark/light mode
-      lib/
-        api.ts                      # Typed API client
-        constants.ts                # Commodity config, API URLs
-        utils.ts                    # Format helpers, sparkline math
-      types/
-        index.ts                    # TypeScript interfaces
+      commodity_service.py     # Twelve Data + GBM fallback
+    routers/
+      prices.py / websocket.py / news.py / fx.py
+      analyst.py / simulator.py / export.py
+      india.py / correlation.py
+  frontend/src/
+    app/                       # 13 pages (Next.js App Router)
+    components/
+      Sidebar.tsx              # Grouped nav with icons
+      Topbar.tsx               # Search + live status
+      PriceCard.tsx / Ticker.tsx / StatsBar.tsx
+    hooks/
+      usePrices.ts / useTheme.ts / useWatchlist.ts
+    lib/
+      api.ts / constants.ts / utils.ts
 ```
 
-## API Reference
+---
 
-| Method | Path | Description |
-|---|---|---|
-| GET | /api/prices | All commodity prices |
-| GET | /api/prices/:id | Single commodity |
-| GET | /api/ticker | Lightweight ticker data |
-| GET | /api/health | Health check |
-| WS | /ws/prices | Live price stream |
+## Build Phases
 
-## Commodity IDs
+| Phase | Features |
+|---|---|
+| 1 | Dashboard, live prices, WebSocket, dark mode |
+| 2 | Explorer, News, Converter, Watchlist |
+| 3 | AI Analyst, Shock Simulator, Alerts, Learn |
+| 4 | Global Map, Correlation Matrix, Export, India Layer |
 
-`crude-wti`, `crude-brent`, `natural-gas`, `gold`, `silver`, `copper`, `aluminium`, `platinum`
+---
 
-## Design System
-
-- Font UI: Outfit (Google Fonts)
-- Font mono (prices): JetBrains Mono
-- Primary orange: `#D46A00`
-- Background dark: `#080808`
-- Price up: `#22C55E`
-- Price down: `#EF4444`
-- No emoji anywhere in the project
-
-## Deployment (Phase 4)
-
-Frontend: `vercel deploy` from `/frontend`
-
-Backend:
-```
-fly launch --name commoditychain-api --region bom
-fly deploy
-```
-
-## Phase Roadmap
-
-- Phase 1 (current): Dashboard, live prices, WebSocket, dark mode
-- Phase 2: Price Explorer charts, News Feed, Converter, Watchlist
-- Phase 3: AI Analyst (Groq), Shock Simulator, Price Alerts
-- Phase 4: Global map, correlation matrix, export, deployment
+*Built by Ayush Raj — BSc CSDA @ IIT Patna 2024–2028*  
+*Stack: Next.js 14 · FastAPI · Groq · Twelve Data · Vercel · Render*

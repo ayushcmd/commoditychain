@@ -11,7 +11,7 @@ import { usePrices } from "@/hooks/usePrices";
 type Range = "1W" | "1M" | "3M" | "1Y";
 const RANGES: Range[] = ["1W", "1M", "3M", "1Y"];
 
-function MiniChart({ data, positive, width, height }: { data: { timestamp: string; price: number }[]; positive: boolean; width: number; height: number }) {
+function MiniChart({ data, width, height }: { data: { timestamp: string; price: number }[]; positive?: boolean; width: number; height: number }) {
   if (!data || data.length < 2) return null;
   const prices = data.map(p => p.price);
   const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
@@ -20,7 +20,9 @@ function MiniChart({ data, positive, width, height }: { data: { timestamp: strin
   const pts = prices.map((p, i) => `${pad + (i / (prices.length - 1)) * w},${pad + h - ((p - min) / range) * h}`);
   const polyline = pts.join(" ");
   const fill = `${pts.join(" ")} ${pad + w},${pad + h} ${pad},${pad + h}`;
-  const color = positive ? "#22C55E" : "#EF4444";
+  // Color based on chart direction: last price vs first price
+  const chartPositive = prices[prices.length - 1] >= prices[0];
+  const color = chartPositive ? "#22C55E" : "#EF4444";
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <defs>
@@ -178,7 +180,7 @@ export default function ExplorerPage() {
                 {/* Chart */}
                 <div style={{ position: "relative", height: "240px", width: "100%" }}>
                   {hist.length > 1 ? (
-                    <MiniChart data={hist} positive={positive} width={800} height={240} />
+                    <MiniChart data={hist} width={800} height={240} />
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-tertiary)", fontSize: "13px" }}>
                       Not enough history data for this range
