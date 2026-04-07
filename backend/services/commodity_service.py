@@ -1,6 +1,6 @@
 """
-Commodity service — Twelve Data for all real prices.
-Falls back to GBM simulation if API call fails.
+Commodity service — yfinance for all real prices.
+Falls back to GBM simulation if yfinance call fails.
 """
 
 import asyncio
@@ -12,27 +12,22 @@ import time
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-import requests
+import yfinance as yf
 
 from models.commodity import Commodity, PricePoint
 
 logger = logging.getLogger(__name__)
 
-TWELVE_DATA_KEY = os.getenv("TWELVE_DATA_KEY", "")
-
 COMMODITIES_CONFIG = [
-    {"id": "crude-wti",   "name": "Crude Oil WTI", "ticker": "WTI",    "td_symbol": "WTI/USD",   "unit": "per barrel",  "category": "energy",  "currency": "USD", "seed": 82.50,   "vol": 0.012},
-    {"id": "crude-brent", "name": "Brent Crude",   "ticker": "BRENT",  "td_symbol": "BRENT/USD", "unit": "per barrel",  "category": "energy",  "currency": "USD", "seed": 86.20,   "vol": 0.011},
-    {"id": "natural-gas", "name": "Natural Gas",   "ticker": "NG=F",   "td_symbol": "NATURAL_GAS/USD", "unit": "per MMBtu","category": "energy","currency": "USD", "seed": 2.15,    "vol": 0.022},
-    {"id": "gold",        "name": "Gold",          "ticker": "GC=F",   "td_symbol": "XAU/USD",   "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 3300.00, "vol": 0.006},
-    {"id": "silver",      "name": "Silver",        "ticker": "SI=F",   "td_symbol": "XAG/USD",   "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 33.50,   "vol": 0.014},
-    {"id": "copper",      "name": "Copper",        "ticker": "HG=F",   "td_symbol": "COPPER/USD","unit": "per lb",      "category": "metals",  "currency": "USD", "seed": 4.45,    "vol": 0.009},
-    {"id": "aluminium",   "name": "Aluminium",     "ticker": "ALI=F",  "td_symbol": "ALUMINUM/USD","unit": "per lb",    "category": "metals",  "currency": "USD", "seed": 1.12,    "vol": 0.008},
-    {"id": "platinum",    "name": "Platinum",      "ticker": "PL=F",   "td_symbol": "XPT/USD",   "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 980.00,  "vol": 0.010},
+    {"id": "crude-wti",   "name": "Crude Oil WTI", "ticker": "WTI",   "yf_symbol": "CL=F",  "unit": "per barrel",  "category": "energy",  "currency": "USD", "seed": 111.00, "vol": 0.012},
+    {"id": "crude-brent", "name": "Brent Crude",   "ticker": "BRENT", "yf_symbol": "BZ=F",  "unit": "per barrel",  "category": "energy",  "currency": "USD", "seed": 110.00, "vol": 0.011},
+    {"id": "natural-gas", "name": "Natural Gas",   "ticker": "NG=F",  "yf_symbol": "NG=F",  "unit": "per MMBtu",   "category": "energy",  "currency": "USD", "seed": 3.80,   "vol": 0.022},
+    {"id": "gold",        "name": "Gold",          "ticker": "GC=F",  "yf_symbol": "GC=F",  "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 4630.00,"vol": 0.006},
+    {"id": "silver",      "name": "Silver",        "ticker": "SI=F",  "yf_symbol": "SI=F",  "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 72.00,  "vol": 0.014},
+    {"id": "copper",      "name": "Copper",        "ticker": "HG=F",  "yf_symbol": "HG=F",  "unit": "per lb",      "category": "metals",  "currency": "USD", "seed": 4.80,   "vol": 0.009},
+    {"id": "aluminium",   "name": "Aluminium",     "ticker": "ALI=F", "yf_symbol": "ALI=F", "unit": "per lb",      "category": "metals",  "currency": "USD", "seed": 1.12,   "vol": 0.008},
+    {"id": "platinum",    "name": "Platinum",      "ticker": "PL=F",  "yf_symbol": "PL=F",  "unit": "per troy oz", "category": "metals",  "currency": "USD", "seed": 980.00, "vol": 0.010},
 ]
-
-SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": "CommodityChain/1.0"})
 
 _cache: dict[str, Commodity] = {}
 _cache_ts: Optional[datetime] = None
@@ -40,42 +35,41 @@ _price_state: dict[str, float] = {}
 CACHE_TTL = 60
 
 
-# ── Twelve Data ─────────────────────────────────────────────────
+# ── yfinance fetch ───────────────────────────────────────────────
 
-def _fetch_twelve_data(symbol: str) -> Optional[dict]:
-    """Fetch latest quote + 30-day history from Twelve Data."""
+def _fetch_yfinance(symbol: str) -> Optional[dict]:
     try:
-        # Current price
-        quote_url = "https://api.twelvedata.com/price"
-        q = SESSION.get(quote_url, params={"symbol": symbol, "apikey": TWELVE_DATA_KEY}, timeout=8)
-        q.raise_for_status()
-        price_data = q.json()
-        if "price" not in price_data:
+        tk = yf.Ticker(symbol)
+        info = tk.fast_info
+
+        price = info.last_price
+        if not price or math.isnan(price):
             return None
-        price = float(price_data["price"])
 
-        # 30-day history
-        ts_url = "https://api.twelvedata.com/time_series"
-        r = SESSION.get(ts_url, params={
-            "symbol": symbol, "interval": "1day",
-            "outputsize": 30, "apikey": TWELVE_DATA_KEY
-        }, timeout=10)
-        r.raise_for_status()
-        ts_data = r.json()
+        prev_close = info.previous_close or price
+        day_high   = info.day_high or price
+        day_low    = info.day_low or price
 
+        hist = tk.history(period="30d", interval="1d")
         history = []
-        if "values" in ts_data:
-            for v in reversed(ts_data["values"]):
-                history.append(PricePoint(timestamp=v["datetime"], price=round(float(v["close"]), 4)))
+        for idx, row in hist.iterrows():
+            close = row["Close"]
+            if close and not math.isnan(close):
+                history.append(PricePoint(
+                    timestamp=idx.strftime("%Y-%m-%d"),
+                    price=round(float(close), 4)
+                ))
 
-        prev_close = float(ts_data["values"][1]["close"]) if len(ts_data.get("values", [])) > 1 else price
-        high24 = float(ts_data["values"][0]["high"]) if ts_data.get("values") else price
-        low24  = float(ts_data["values"][0]["low"])  if ts_data.get("values") else price
-
-        return {"price": price, "prev_close": prev_close, "high24": high24, "low24": low24, "history": history}
+        return {
+            "price":      round(float(price), 4),
+            "prev_close": round(float(prev_close), 4),
+            "high24":     round(float(day_high), 4),
+            "low24":      round(float(day_low), 4),
+            "history":    history,
+        }
 
     except Exception as exc:
-        logger.warning("Twelve Data error for %s: %s", symbol, exc)
+        logger.warning("yfinance error for %s: %s", symbol, exc)
         return None
 
 
@@ -95,10 +89,12 @@ def _build_history(cid: str, price: float, seed: float, vol: float) -> list[Pric
     now = datetime.now(timezone.utc)
     for i in range(30, -1, -1):
         p = max(seed * 0.82, min(seed * 1.18, p * math.exp(random.gauss(0, vol * 0.5))))
-        pts.append(PricePoint(timestamp=(now - timedelta(days=i)).isoformat(), price=round(p, 4)))
-    pts[-1] = PricePoint(timestamp=now.isoformat(), price=price)
+        pts.append(PricePoint(timestamp=(now - timedelta(days=i)).strftime("%Y-%m-%d"), price=round(p, 4)))
+    pts[-1] = PricePoint(timestamp=now.strftime("%Y-%m-%d"), price=price)
     return pts
 
+
+# ── Build Commodity object ───────────────────────────────────────
 
 def _build_commodity(cfg: dict, price: float, prev_close: float, high24: float, low24: float, history: list, is_live: bool) -> Commodity:
     change     = round(price - prev_close, 4)
@@ -106,11 +102,18 @@ def _build_commodity(cfg: dict, price: float, prev_close: float, high24: float, 
     source     = "live" if is_live else "sim"
     logger.info("%s %-14s  $%10.4f  %+.2f%%  [%s]", "OK" if is_live else "SIM", cfg["id"], price, change_pct, source)
     return Commodity(
-        id=cfg["id"], name=cfg["name"], ticker=cfg["ticker"],
-        unit=cfg["unit"], category=cfg["category"], currency=cfg["currency"],
-        price=price, previousClose=round(prev_close, 4),
-        change=change, changePercent=change_pct,
-        high24h=round(high24, 4), low24h=round(low24, 4),
+        id=cfg["id"],
+        name=cfg["name"],
+        ticker=cfg["ticker"],
+        unit=cfg["unit"],
+        category=cfg["category"],
+        currency=cfg["currency"],
+        price=price,
+        previousClose=round(prev_close, 4),
+        change=change,
+        changePercent=change_pct,
+        high24h=round(high24, 4),
+        low24h=round(low24, 4),
         volume=round(random.uniform(80_000, 250_000), 0),
         marketStatus="open",
         lastUpdated=datetime.now(timezone.utc).isoformat(),
@@ -126,15 +129,17 @@ async def _fetch_all() -> list[Commodity]:
 
     for i, cfg in enumerate(COMMODITIES_CONFIG):
         if i > 0:
-            await asyncio.sleep(0.5)  # respect rate limit
+            await asyncio.sleep(0.3)
 
-        td_data = None
-        if TWELVE_DATA_KEY:
-            td_data = await loop.run_in_executor(None, _fetch_twelve_data, cfg["td_symbol"])
+        yf_data = await loop.run_in_executor(None, _fetch_yfinance, cfg["yf_symbol"])
 
-        if td_data:
-            c = _build_commodity(cfg, td_data["price"], td_data["prev_close"],
-                                 td_data["high24"], td_data["low24"], td_data["history"], is_live=True)
+        if yf_data:
+            c = _build_commodity(
+                cfg,
+                yf_data["price"], yf_data["prev_close"],
+                yf_data["high24"], yf_data["low24"],
+                yf_data["history"], is_live=True
+            )
         else:
             price = _simulate_price(cfg["id"], cfg["seed"], cfg["vol"])
             prev  = price / math.exp(random.gauss(0, cfg["vol"] * 0.4))
@@ -149,7 +154,8 @@ async def _fetch_all() -> list[Commodity]:
 # ── Cache ────────────────────────────────────────────────────────
 
 def _stale() -> bool:
-    if not _cache_ts: return True
+    if not _cache_ts:
+        return True
     return (datetime.now(timezone.utc) - _cache_ts).total_seconds() > CACHE_TTL
 
 
