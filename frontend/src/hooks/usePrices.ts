@@ -54,8 +54,10 @@ export function usePrices(): UsePricesReturn {
 
       ws.onmessage = (event) => {
         try {
-          const update = JSON.parse(event.data) as Commodity[];
-          setCommodities(update);
+          const parsed = JSON.parse(event.data);
+          // Ignore keepalive ping messages
+          if (!Array.isArray(parsed)) return;
+          setCommodities(parsed as Commodity[]);
           setLastUpdated(new Date());
         } catch {
           console.warn("WS parse error", event.data);
