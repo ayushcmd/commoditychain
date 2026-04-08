@@ -70,3 +70,4 @@ for r in [
 @app.get("/", include_in_schema=False)
 async def root():
     return {"service": "CommodityChain API", "version": "4.0.0", "docs": "/docs"}
+
