@@ -19,6 +19,14 @@
   --sidebar-collapsed: 64px;
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --text-primary:   var(--text-1);
+--text-secondary: var(--text-2);
+--text-tertiary:  var(--text-3);
+--surface-orange: rgba(212, 106, 0, 0.12);
+--down:           #DC2626;
+--down-dim:       rgba(220, 38, 38, 0.10);
+--up-dim:         rgba(22, 163, 74, 0.10);
 }
 
 /* Dark theme */

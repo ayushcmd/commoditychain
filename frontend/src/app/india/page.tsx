@@ -39,7 +39,7 @@ export default function IndiaPage() {
       fetch(`${BASE}/api/india/prices`).then(r => r.json()),
       fetch(`${BASE}/api/india/macro`).then(r => r.json()),
     ]).then(([prices, macro]) => {
-      setIndiaData(prices);
+      setIndiaData(prices?.cities ? prices : null);
       setMacroData(macro);
       setLoading(false);
     }).catch(() => setLoading(false));

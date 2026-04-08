@@ -44,7 +44,7 @@ export default function CorrelationPage() {
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/correlation`)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
+      .then(d => { setData(d?.ids ? d : null); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
