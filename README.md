@@ -157,5 +157,5 @@ commoditychain/
 
 ---
 
-*Built by Ayush Raj — BSc CSDA @ IIT Patna 2024–2028*  
+*Built by Ayush Raj
 *Stack: Next.js 14 · FastAPI · Groq · Twelve Data · Vercel · Azure*
