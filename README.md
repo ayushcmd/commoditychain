@@ -159,3 +159,9 @@ commoditychain/
 
 *Built by Ayush Raj
 *Stack: Next.js 14 · FastAPI · Groq · Twelve Data · Vercel · Azure*
+
+<!-- open-workers:bottom:start -->
+## License
+
+Licensed under [Apache License 2.0](LICENSE).
+<!-- open-workers:bottom:end -->
